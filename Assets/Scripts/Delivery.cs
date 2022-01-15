@@ -5,16 +5,25 @@ using UnityEngine;
 public class Delivery : MonoBehaviour
 {
     [SerializeField] private SoundManager _soundManager;
+    [SerializeField] private int _maxPackages = 1;
+    [SerializeField] private float _packagePickupSpeed = 0.1f;
+    [SerializeField] private Color32 _hasPackagesColor = new Color32(1,1,1, 1);
+    [SerializeField] private Color32 _noPackagesColor = new Color32(1, 1, 1, 1);
+    
 
     private int _packages = 0;
 
+    SpriteRenderer _spriteRenderer;
+
     private void Start()
     {
-       // _soundManager = GetComponent<SoundManager>();
+        _spriteRenderer = GetComponent<SpriteRenderer>();
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {
         Debug.Log($"Auch");
+        _soundManager.PlayCrashSound();
+
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -22,21 +31,36 @@ public class Delivery : MonoBehaviour
 
         if (collision.tag == "Package")
         {
-            Debug.Log("Package picked up");
+            var isFull = (_packages == _maxPackages);
 
-            _packages++;
+            if (isFull)
+            {
+                Debug.Log("Full");
+                _soundManager.PlayInventoryFullSound();
+            }
+            else
+            {
+                Debug.Log("Pickup");
+                _soundManager.PlayPickupSound();
+                Destroy(collision.gameObject, _packagePickupSpeed);
+                _packages++;
 
-            _soundManager.PlayPickupSound();
+                _spriteRenderer.color = _hasPackagesColor;
+            }
         }
 
         if (collision.tag == "Customer")
         {
-            var anyPackages = _packages > 0;
-            if (anyPackages)
+            if (HasPackages())
             {
                 Debug.Log("Package delivered");
                 _soundManager.PlayDeliveredSound();
                 _packages--;
+
+                if (!HasPackages())
+                {
+                    _spriteRenderer.color = _noPackagesColor;
+                }
 
             }
             else
@@ -49,6 +73,8 @@ public class Delivery : MonoBehaviour
         }
     }
 
-
-
+    private bool HasPackages()
+    {
+        return _packages > 0;
+    }
 }

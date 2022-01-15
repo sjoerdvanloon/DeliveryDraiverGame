@@ -67,6 +67,12 @@ public class SoundManager : MonoBehaviour
         PlayRandomSound(_crashSounds);
     }
 
+    public void PlayInventoryFullSound()
+    {
+        PlayRandomSound(_inventoryFullSounds);
+    }
+
+
     public void PlayRandomSound(IEnumerable<AudioClip> audioClips)
     {
         if (!audioClips.Any())
