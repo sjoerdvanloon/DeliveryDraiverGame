@@ -1,29 +1,30 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Delivery : MonoBehaviour
 {
-    [SerializeField] private SoundManager _soundManager;
+    /// [SerializeField] private SoundManager _soundManager = null;
     [SerializeField] private int _maxPackages = 1;
     [SerializeField] private float _packagePickupSpeed = 0.1f;
-    [SerializeField] private Color32 _hasPackagesColor = new Color32(1,1,1, 1);
+    [SerializeField] private Color32 _hasPackagesColor = new Color32(1, 1, 1, 1);
     [SerializeField] private Color32 _noPackagesColor = new Color32(1, 1, 1, 1);
-    
+    [SerializeField] private bool _log = false;
+
 
     private int _packages = 0;
-
     SpriteRenderer _spriteRenderer;
+    AudioManager _audioManager;
+
+    public event Action OnPickUp;
+    public event Action<int> OnDeliver;
+
 
     private void Start()
     {
         _spriteRenderer = GetComponent<SpriteRenderer>();
-    }
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        Debug.Log($"Auch");
-        _soundManager.PlayCrashSound();
-
+        _audioManager = AudioManager.Instance;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -35,17 +36,16 @@ public class Delivery : MonoBehaviour
 
             if (isFull)
             {
-                Debug.Log("Full");
-                _soundManager.PlayInventoryFullSound();
+                _audioManager.PlaySound("TooManyPackages");
             }
             else
             {
-                Debug.Log("Pickup");
-                _soundManager.PlayPickupSound();
+                _audioManager.PlaySound("PickUp");
                 Destroy(collision.gameObject, _packagePickupSpeed);
                 _packages++;
 
                 _spriteRenderer.color = _hasPackagesColor;
+                OnPickUp();
             }
         }
 
@@ -53,9 +53,10 @@ public class Delivery : MonoBehaviour
         {
             if (HasPackages())
             {
-                Debug.Log("Package delivered");
-                _soundManager.PlayDeliveredSound();
-                _packages--;
+                _audioManager.PlaySound("Deliver");
+                _packages -= 1;  // One package dropped off
+
+                OnDeliver(1); // One package
 
                 if (!HasPackages())
                 {
@@ -65,16 +66,21 @@ public class Delivery : MonoBehaviour
             }
             else
             {
-                Debug.Log("Empty");
-                _soundManager.PlayWrongSound();
+                Log("empty");
+                _audioManager.PlaySound("NoPackages");
             }
-
-
         }
     }
 
     private bool HasPackages()
     {
         return _packages > 0;
+    }
+
+    private void Log(string message)
+    {
+        if (_log)
+            Debug.Log(message);
+
     }
 }
